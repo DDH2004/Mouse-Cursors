@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Snake Cursor</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      cursor: none; /* hide default cursor */
+      background: #111;
+    }
+    .dot {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: limegreen;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  const dots = [];
+  const totalDots = 20; // number of snake segments
+
+  for (let i = 0; i < totalDots; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    document.body.appendChild(d);
+    dots.push({ element: d, x: 0, y: 0 });
+  }
+
+  let mouse = { x: 0, y: 0 };
+  window.addEventListener('mousemove', (event) => {
+    mouse.x = event.clientX;
+    mouse.y = event.clientY;
+  });
+
+  function animate() {
+    let x = mouse.x;
+    let y = mouse.y;
+
+    dots.forEach((dot, index) => {
+      dot.x += (x - dot.x) * 0.3;
+      dot.y += (y - dot.y) * 0.3;
+      dot.element.style.transform = `translate(${dot.x}px, ${dot.y}px)`;
+
+      x = dot.x;
+      y = dot.y;
+    });
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+</script>
+
+</body>
+</html>

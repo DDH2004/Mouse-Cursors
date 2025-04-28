@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dragon Tail Cursor (Advanced)</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      cursor: none; /* Hide default cursor */
+      background: #111;
+    }
+    .dot {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      pointer-events: none;
+      opacity: 0.8;
+      transform-origin: center;
+      transition: transform 0.1s linear;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+    const dots = [];
+    const sideDots = [];
+    const totalDots = 30; // number of main tail segments
+    const offsetAmount = 15; // distance for side scales
+
+    // Theme settings
+    const themeStartHue = 0;   // 🔥 Red
+    const themeEndHue = 60;    // 🔥 Yellow
+    const colorCycleSpeed = 0.02;
+
+    // Mouse position
+    let mouse = { x: 0, y: 0 };
+    window.addEventListener('mousemove', (event) => {
+      mouse.x = event.clientX;
+      mouse.y = event.clientY;
+    });
+
+    // Function to get a theme color
+    function getThemeColor(index, timeOffset) {
+      const hueRange = themeEndHue - themeStartHue;
+      const animatedHue = themeStartHue + (Math.sin(timeOffset + index * 0.2) * 0.5 + 0.5) * hueRange;
+      return `hsl(${animatedHue}, 100%, 50%)`;
+    }
+
+    // Create main dots and side dots
+    for (let i = 0; i < totalDots; i++) {
+      // Main tail segment
+      const svgMain = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svgMain.setAttribute("viewBox", "0 0 100 100");
+      svgMain.classList.add("dot");
+
+      const pathMain = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathMain.setAttribute("d", "M100 50 Q60 80 0 50 Q60 20 100 50 Z");
+      pathMain.setAttribute("fill", "crimson");
+
+      svgMain.appendChild(pathMain);
+      document.body.appendChild(svgMain);
+
+      dots.push({ element: svgMain, x: 0, y: 0, angle: 0 });
+
+      // Side scales (left and right)
+      ["left", "right"].forEach((side) => {
+        const svgSide = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svgSide.setAttribute("viewBox", "0 0 100 100");
+        svgSide.classList.add("dot");
+
+        const pathSide = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pathSide.setAttribute("d", "M100 50 Q60 80 0 50 Q60 20 100 50 Z");
+        pathSide.setAttribute("fill", "crimson");
+
+        svgSide.appendChild(pathSide);
+        document.body.appendChild(svgSide);
+
+        const randomScale = 0.8 + Math.random() * 0.4;
+        const randomOpacity = 0.5 + Math.random() * 0.5;
+        const offsetX = side === "left" ? -offsetAmount : offsetAmount;
+
+        sideDots.push({
+          element: svgSide,
+          x: 0,
+          y: 0,
+          angle: 0,
+          offsetX,
+          randomScale,
+          randomOpacity
+        });
+      });
+    }
+
+    // Animate function
+    function animate() {
+      let x = mouse.x;
+      let y = mouse.y;
+      const time = performance.now() * colorCycleSpeed * 0.001;
+
+      dots.forEach((dot, index) => {
+        const speed = 0.2 - index * 0.003;
+        dot.x += (x - dot.x) * speed;
+        dot.y += (y - dot.y) * speed;
+
+        const dx = x - dot.x;
+        const dy = y - dot.y;
+        dot.angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+        const scale = 1 - index * 0.02;
+        const color = getThemeColor(index, time);
+
+        dot.element.style.transform = `
+          translate(${dot.x}px, ${dot.y}px)
+          rotate(${dot.angle}deg)
+          scale(${scale})
+        `;
+        dot.element.querySelector('path').setAttribute("fill", color);
+        dot.element.style.opacity = 1 - index / totalDots;
+
+        x = dot.x;
+        y = dot.y;
+      });
+
+      // Side dots
+      sideDots.forEach((dot, index) => {
+        const mainIndex = Math.floor(index / 2);
+        const speed = 0.2 - mainIndex * 0.003;
+        dot.x += (mouse.x - dot.x) * speed;
+        dot.y += (mouse.y - dot.y) * speed;
+
+        const dx = mouse.x - dot.x;
+        const dy = mouse.y - dot.y;
+        dot.angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+        const baseScale = 1 - mainIndex * 0.02;
+        const scale = baseScale * dot.randomScale;
+        const offsetX = Math.cos(dot.angle * (Math.PI / 180) + Math.PI / 2) * dot.offsetX;
+        const offsetY = Math.sin(dot.angle * (Math.PI / 180) + Math.PI / 2) * dot.offsetX;
+        const color = getThemeColor(mainIndex, time);
+
+        dot.element.style.transform = `
+          translate(${dot.x + offsetX}px, ${dot.y + offsetY}px)
+          rotate(${dot.angle}deg)
+          scale(${scale})
+        `;
+        dot.element.querySelector('path').setAttribute("fill", color);
+        dot.element.style.opacity = (1 - mainIndex / totalDots) * dot.randomOpacity;
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+</script>
+
+</body>
+</html>
