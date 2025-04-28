@@ -2,20 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Dragon Tail Cursor</title>
+  <title>Dragon Tail Cursor (Sparks Version)</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
-      cursor: none; /* Hide default cursor */
+      cursor: none;
       background: #111;
     }
-    .dot {
+    .dot, .spark {
       position: absolute;
       width: 30px;
       height: 30px;
       pointer-events: none;
-      opacity: 0.8;
       transform-origin: center;
       transition: transform 0.1s linear;
     }
@@ -30,22 +29,19 @@
 <script>
     const dots = [];
     const sideDots = [];
-    const totalDots = 30; // number of main tail segments
-    const offsetAmount = 15; // distance for side scales
-
-    // Theme settings
-    const themeStartHue = 0;   // 🔥 Red
-    const themeEndHue = 60;    // 🔥 Yellow
+    const sparks = [];
+    const totalDots = 30;
+    const offsetAmount = 15;
+    const themeStartHue = 0;   // Red
+    const themeEndHue = 60;    // Yellow
     const colorCycleSpeed = 0.02;
 
-    // Mouse position
     let mouse = { x: 0, y: 0 };
     window.addEventListener('mousemove', (event) => {
       mouse.x = event.clientX;
       mouse.y = event.clientY;
     });
 
-    // Function to get a theme color
     function getThemeColor(index, timeOffset) {
       const hueRange = themeEndHue - themeStartHue;
       const animatedHue = themeStartHue + (Math.sin(timeOffset + index * 0.2) * 0.5 + 0.5) * hueRange;
@@ -54,7 +50,7 @@
 
     // Create main dots and side dots
     for (let i = 0; i < totalDots; i++) {
-      // Main tail segment
+      // Main scale
       const svgMain = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svgMain.setAttribute("viewBox", "0 0 100 100");
       svgMain.classList.add("dot");
@@ -68,7 +64,7 @@
 
       dots.push({ element: svgMain, x: 0, y: 0, angle: 0 });
 
-      // Side scales (left and right)
+      // Side scales
       ["left", "right"].forEach((side) => {
         const svgSide = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svgSide.setAttribute("viewBox", "0 0 100 100");
@@ -97,7 +93,32 @@
       });
     }
 
-    // Animate function
+    // Function to create a new spark
+    function createSpark(x, y) {
+      const spark = document.createElement("div");
+      spark.classList.add("spark");
+      spark.style.width = "8px";
+      spark.style.height = "8px";
+      spark.style.borderRadius = "50%";
+      spark.style.background = "hsl(30, 100%, 60%)";
+      spark.style.position = "absolute";
+      spark.style.left = `${x}px`;
+      spark.style.top = `${y}px`;
+      spark.style.opacity = "1";
+
+      document.body.appendChild(spark);
+
+      sparks.push({
+        element: spark,
+        x: x,
+        y: y,
+        dx: (Math.random() - 0.5) * 2, // random sideways motion
+        dy: -Math.random() * 2 - 1,    // always float upward
+        life: 1,
+        scale: 1
+      });
+    }
+
     function animate() {
       let x = mouse.x;
       let y = mouse.y;
@@ -127,7 +148,6 @@
         y = dot.y;
       });
 
-      // Side dots
       sideDots.forEach((dot, index) => {
         const mainIndex = Math.floor(index / 2);
         const speed = 0.2 - mainIndex * 0.003;
@@ -152,6 +172,31 @@
         dot.element.querySelector('path').setAttribute("fill", color);
         dot.element.style.opacity = (1 - mainIndex / totalDots) * dot.randomOpacity;
       });
+
+      // Update sparks
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const spark = sparks[i];
+        spark.x += spark.dx;
+        spark.y += spark.dy;
+        spark.life -= 0.02;
+        spark.scale *= 0.98;
+
+        spark.element.style.transform = `
+          translate(${spark.x}px, ${spark.y}px)
+          scale(${spark.scale})
+        `;
+        spark.element.style.opacity = spark.life;
+
+        if (spark.life <= 0) {
+          spark.element.remove();
+          sparks.splice(i, 1);
+        }
+      }
+
+      // Random chance to create a spark
+      if (Math.random() < 0.1) {
+        createSpark(mouse.x, mouse.y);
+      }
 
       requestAnimationFrame(animate);
     }
